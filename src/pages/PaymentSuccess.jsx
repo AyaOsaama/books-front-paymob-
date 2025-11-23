@@ -7,49 +7,50 @@ export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState("جاري التحقق...");
   const [accessKey, setAccessKey] = useState(null);
-  const [bookId, setBookId] = useState(null);
+  const [bookId] = useState(2); // ممكن تخليه ديناميكي حسب الطلب
 
   useEffect(() => {
+    const success = searchParams.get("success");
     const orderId = searchParams.get("order_id");
+
     if (!orderId) {
       setStatus("رقم الطلب غير موجود.");
       return;
     }
 
-    const verifyPayment = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/verify/${orderId}`);
-        const data = await res.json();
-
-        if (data.status === "paid") {
-          setStatus("تم الدفع بنجاح!");
-          setAccessKey(data.accessKey);
-          setBookId(2); // حطي هنا الـ bookId المناسب أو جبيه ديناميكياً
-        } else {
-          setStatus("الدفع لم يكتمل بعد.");
-        }
-      } catch (err) {
-        console.error(err);
-        setStatus("حدث خطأ أثناء التحقق من الدفع.");
-      }
-    };
-
-    verifyPayment();
+    if (success === "true") {
+      setStatus("تم الدفع بنجاح!");
+      // استدعاء الـ backend للتحقق من orderId و الحصول على accessKey
+      fetch(`${API_BASE_URL}/verify/${orderId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.status === "paid") setAccessKey(data.accessKey);
+          else setStatus("الدفع لم يكتمل بعد.");
+        })
+        .catch(err => {
+          console.error(err);
+          setStatus("حدث خطأ أثناء التحقق من الدفع.");
+        });
+    } else {
+      setStatus("حدث خطأ أو تم إلغاء الدفع.");
+    }
   }, [searchParams]);
 
   return (
-    <div className="p-6 text-center">
-      <h1 className="text-2xl font-bold mb-4">{status}</h1>
-      {accessKey && bookId && (
-        <a
-          href={`${API_BASE_URL}/books/${bookId}/pdf?accessKey=${accessKey}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block mt-4 px-6 py-3 bg-green-600 text-white font-bold rounded-xl"
-        >
-          تحميل الكتاب
-        </a>
-      )}
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
+      <div className="bg-white shadow-lg rounded-xl p-8 max-w-md text-center">
+        <h1 className="text-2xl font-bold mb-4">{status}</h1>
+        {accessKey && (
+          <a
+            href={`${API_BASE_URL}/books/${bookId}/pdf?accessKey=${accessKey}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block mt-4 px-6 py-3 bg-green-600 text-white font-bold rounded-xl transition hover:bg-green-700"
+          >
+            تحميل الكتاب
+          </a>
+        )}
+      </div>
     </div>
   );
 }
