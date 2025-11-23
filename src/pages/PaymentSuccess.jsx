@@ -22,7 +22,7 @@ export default function PaymentSuccess() {
     const fetchBook = async () => {
       try {
         // نجيب الـ accessKey أولًا من verify
-        const verifyRes = await axios.get(`https://books-backend.vercel.app/verify/${orderId}`);
+        const verifyRes = await axios.get(`https://paymob-test-ten.vercel.app/verify/${orderId}`);
         if (verifyRes.data.status !== "paid") {
           setError("الطلب لم يتم الدفع بعد.");
           setLoading(false);
@@ -31,12 +31,12 @@ export default function PaymentSuccess() {
         const accessKey = verifyRes.data.accessKey;
 
         // نجيب بيانات الطلب من orders.json على حسب orderId
-        const ordersRes = await axios.get(`https://books-backend.vercel.app/orders/${orderId}`);
+        const ordersRes = await axios.get(`https://paymob-test-ten.vercel.app/orders/${orderId}`);
         // لو مفيش orders endpoint، ممكن نجيب bookId من verify
         const bookId = ordersRes.data?.bookId || verifyRes.data.bookId;
 
         // نجيب بيانات الكتاب
-        const bookRes = await axios.get(`https://books-backend.vercel.app/books/${bookId}`);
+        const bookRes = await axios.get(`https://paymob-test-ten.vercel.app/books/${bookId}`);
         setBookData(bookRes.data);
       } catch (err) {
         console.error(err);
