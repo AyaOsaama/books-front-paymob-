@@ -11,7 +11,6 @@ export default function PaymentSuccess() {
 
   useEffect(() => {
     const orderId = searchParams.get("order_id");
-
     if (!orderId) {
       setStatus("رقم الطلب غير موجود.");
       return;
@@ -25,7 +24,7 @@ export default function PaymentSuccess() {
         if (data.status === "paid") {
           setStatus("تم الدفع بنجاح!");
           setAccessKey(data.accessKey);
-          setBookId(2); // هنا ممكن تحدد bookId المناسب أو تجلبه ديناميكياً
+          setBookId(2); // حطي هنا الـ bookId المناسب أو جبيه ديناميكياً
         } else {
           setStatus("الدفع لم يكتمل بعد.");
         }
@@ -46,7 +45,7 @@ export default function PaymentSuccess() {
           href={`${API_BASE_URL}/books/${bookId}/pdf?accessKey=${accessKey}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl"
+          className="inline-block mt-4 px-6 py-3 bg-green-600 text-white font-bold rounded-xl"
         >
           تحميل الكتاب
         </a>
