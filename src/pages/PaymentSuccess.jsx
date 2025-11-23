@@ -7,7 +7,7 @@ export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
   const [status, setStatus] = useState("جاري التحقق...");
   const [accessKey, setAccessKey] = useState(null);
-  const [bookId] = useState(2); // ممكن تخليه ديناميكي حسب الطلب
+  const [bookId, setBookId] = useState(2); // ممكن تخليه ديناميكي حسب الطلب
 
   useEffect(() => {
     const success = searchParams.get("success");
