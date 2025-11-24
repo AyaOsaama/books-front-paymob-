@@ -12,46 +12,61 @@ export default function PaymentSuccess() {
   const [bookData, setBookData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+useEffect(() => {
+  if (!success || !orderId) {
+    setLoading(false);
+    return;
+  }
 
-  useEffect(() => {
-    if (!success || !orderId) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchBook = async () => {
-      try {
-        // جلب بيانات الدفع والـ bookId من verify
-        const verifyRes = await axios.get(`https://paymob-test-ten.vercel.app/verify/${orderId}`);
-        if (verifyRes.data.status !== "paid") {
-          setError("الطلب لم يتم الدفع بعد.");
-          setLoading(false);
-          return;
-        }
-
-        const bookId = verifyRes.data.bookId;
-
-        // جلب بيانات الكتاب
-        const bookRes = await axios.get(`https://paymob-test-ten.vercel.app/books/${bookId}`);
-        setBookData(bookRes.data);
-      } catch (err) {
-        console.error(err);
-        setError("حدث خطأ أثناء جلب بيانات الكتاب.");
-      } finally {
+  const fetchBook = async () => {
+    try {
+      // جلب بيانات الدفع والـ bookId و accessKey من verify
+      const verifyRes = await axios.get(`https://paymob-test-ten.vercel.app/verify/${orderId}`);
+      if (verifyRes.data.status !== "paid") {
+        setError("الطلب لم يتم الدفع بعد.");
         setLoading(false);
+        return;
       }
-    };
 
-    fetchBook();
-  }, [success, orderId]);
+      const bookId = verifyRes.data.bookId;
+      const accessKey = verifyRes.data.accessKey; // <-- هنا بنجيب الـ accessKey
 
-  const handleOpenBook = () => {
-    alert("سيتم فتح الكتاب في القارئ...");
+      // جلب بيانات الكتاب
+      const bookRes = await axios.get(`https://paymob-test-ten.vercel.app/books/${bookId}`);
+      // نضيف accessKey للـ bookData عشان نقدر نستخدمه في الفتح والتحميل
+      setBookData({ ...bookRes.data, accessKey });
+
+    } catch (err) {
+      console.error(err);
+      setError("حدث خطأ أثناء جلب بيانات الكتاب.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleDownload = () => {
-    alert("جاري تحميل الكتاب...");
-  };
+  fetchBook();
+}, [success, orderId]);
+
+
+const handleOpenBook = () => {
+  if (!bookData) return;
+  // فتح الكتاب في نافذة جديدة
+  const url = `https://paymob-test-ten.vercel.app/books/${bookData.id}/pdf?accessKey=${bookData.accessKey}`;
+  window.open(url, "_blank");
+};
+
+const handleDownload = () => {
+  if (!bookData) return;
+  // تحميل الكتاب مباشرة
+  const url = `https://paymob-test-ten.vercel.app/books/${bookData.id}/pdf?accessKey=${bookData.accessKey}`;
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = bookData.pdf || `${bookData.title}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 
   if (loading) {
     return (
