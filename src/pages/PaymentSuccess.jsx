@@ -5,68 +5,65 @@ import axios from "axios";
 
 export default function PaymentSuccess() {
   const [searchParams] = useSearchParams();
-  const successParam = searchParams.get("success"); // "true" أو "false"
+  const successParam = searchParams.get("success");
   const orderId = searchParams.get("order_id");
 
   const [success, setSuccess] = useState(successParam === "true");
   const [bookData, setBookData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-useEffect(() => {
-  if (!success || !orderId) {
-    setLoading(false);
-    return;
-  }
 
-  const fetchBook = async () => {
-    try {
-      // جلب بيانات الدفع والـ bookId و accessKey من verify
-      const verifyRes = await axios.get(`https://paymob-test-ten.vercel.app/verify/${orderId}`);
-      if (verifyRes.data.status !== "paid") {
-        setError("الطلب لم يتم الدفع بعد.");
-        setLoading(false);
-        return;
-      }
-
-      const bookId = verifyRes.data.bookId;
-      const accessKey = verifyRes.data.accessKey; // <-- هنا بنجيب الـ accessKey
-
-      // جلب بيانات الكتاب
-      const bookRes = await axios.get(`https://paymob-test-ten.vercel.app/books/${bookId}`);
-      // نضيف accessKey للـ bookData عشان نقدر نستخدمه في الفتح والتحميل
-      setBookData({ ...bookRes.data, accessKey });
-
-    } catch (err) {
-      console.error(err);
-      setError("حدث خطأ أثناء جلب بيانات الكتاب.");
-    } finally {
+  useEffect(() => {
+    if (!success || !orderId) {
       setLoading(false);
+      return;
     }
+
+    const fetchBook = async () => {
+      try {
+        // التحقق من الدفع وجلب bookId و accessKey
+        const verifyRes = await axios.get(`https://paymob-test-ten.vercel.app/verify/${orderId}`);
+        if (verifyRes.data.status !== "paid") {
+          setError("الطلب لم يتم الدفع بعد.");
+          setLoading(false);
+          return;
+        }
+
+        const bookId = verifyRes.data.bookId;
+        const accessKey = verifyRes.data.accessKey;
+
+        // جلب بيانات الكتاب
+        const bookRes = await axios.get(`https://paymob-test-ten.vercel.app/books/${bookId}`);
+        setBookData({ ...bookRes.data, accessKey });
+      } catch (err) {
+        console.error(err);
+        setError("حدث خطأ أثناء جلب بيانات الكتاب.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBook();
+  }, [success, orderId]);
+
+  // فتح الكتاب في نافذة جديدة مباشرة
+  const handleOpenBook = () => {
+    if (!bookData || !bookData.accessKey) return;
+    const url = `https://paymob-test-ten.vercel.app/books/${bookData.id}/pdf?accessKey=${bookData.accessKey}`;
+    window.open(url, "_blank");
   };
 
-  fetchBook();
-}, [success, orderId]);
-
-
-const handleOpenBook = () => {
-  if (!bookData) return;
-  // فتح الكتاب في نافذة جديدة
-  const url = `https://paymob-test-ten.vercel.app/books/${bookData.id}/pdf?accessKey=${bookData.accessKey}`;
-  window.open(url, "_blank");
-};
-
-const handleDownload = () => {
-  if (!bookData) return;
   // تحميل الكتاب مباشرة
-  const url = `https://paymob-test-ten.vercel.app/books/${bookData.id}/pdf?accessKey=${bookData.accessKey}`;
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = bookData.pdf || `${bookData.title}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-};
-
+  const handleDownload = () => {
+    if (!bookData || !bookData.accessKey) return;
+    const url = `https://paymob-test-ten.vercel.app/books/${bookData.id}/pdf?accessKey=${bookData.accessKey}`;
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = bookData.pdf || `${bookData.title}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   if (loading) {
     return (
@@ -114,65 +111,67 @@ const handleDownload = () => {
         </div>
 
         {/* بطاقة الكتاب */}
-        <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-          <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
-            <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              <BookOpen className="w-7 h-7" />
-              الكتاب الخاص بك
-            </h2>
-          </div>
-          
-          <div className="p-8">
-            <div className="flex flex-col md:flex-row gap-8">
-              <div className="md:w-1/3">
-                <div className="relative group">
-                  <img 
-                    src={bookData.cover} 
-                    alt={bookData.title}
-                    className="w-full rounded-2xl shadow-xl transform group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-              </div>
-
-              <div className="md:w-2/3 flex flex-col justify-between">
-                <div>
-                  <h3 className="text-3xl font-bold text-gray-800 mb-2">{bookData.title}</h3>
-                  <p className="text-lg text-gray-600 mb-6">بواسطة: {bookData.author || bookData.description}</p>
-                  <div className="flex items-center gap-3 mb-6">
-                    <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg font-semibold text-sm">
-                      PDF
-                    </span>
-                    <span className="bg-amber-100 text-amber-700 px-4 py-2 rounded-lg font-semibold text-sm">
-                      {bookData.price} {bookData.currency || "EGP"}
-                    </span>
+        {bookData && (
+          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 p-6">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <BookOpen className="w-7 h-7" />
+                الكتاب الخاص بك
+              </h2>
+            </div>
+            
+            <div className="p-8">
+              <div className="flex flex-col md:flex-row gap-8">
+                <div className="md:w-1/3">
+                  <div className="relative group">
+                    <img 
+                      src={bookData.cover} 
+                      alt={bookData.title}
+                      className="w-full rounded-2xl shadow-xl transform group-hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button 
-                    onClick={handleOpenBook}
-                    className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2"
-                  >
-                    <BookOpen className="w-5 h-5" />
-                    افتح الكتاب الآن
-                    <ArrowRight className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={handleDownload}
-                    className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2"
-                  >
-                    <Download className="w-5 h-5" />
-                    حمّل الكتاب
-                  </button>
-                </div>
+                <div className="md:w-2/3 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-3xl font-bold text-gray-800 mb-2">{bookData.title}</h3>
+                    <p className="text-lg text-gray-600 mb-6">بواسطة: {bookData.author || bookData.description}</p>
+                    <div className="flex items-center gap-3 mb-6">
+                      <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-lg font-semibold text-sm">
+                        PDF
+                      </span>
+                      <span className="bg-amber-100 text-amber-700 px-4 py-2 rounded-lg font-semibold text-sm">
+                        {bookData.price} {bookData.currency || "EGP"}
+                      </span>
+                    </div>
+                  </div>
 
-                <p className="text-sm text-gray-500 mt-4 text-center">
-                  💡 يمكنك الوصول للكتاب في أي وقت من مكتبتك
-                </p>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button 
+                      onClick={handleOpenBook}
+                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2"
+                    >
+                      <BookOpen className="w-5 h-5" />
+                      افتح الكتاب الآن
+                      <ArrowRight className="w-5 h-5" />
+                    </button>
+                    <button 
+                      onClick={handleDownload}
+                      className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-bold py-4 px-6 rounded-xl transition-all duration-300 transform hover:scale-105 hover:shadow-xl flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-5 h-5" />
+                      حمّل الكتاب
+                    </button>
+                  </div>
+
+                  <p className="text-sm text-gray-500 mt-4 text-center">
+                    💡 يمكنك الوصول للكتاب في أي وقت من مكتبتك
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
