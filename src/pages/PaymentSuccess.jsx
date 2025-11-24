@@ -46,24 +46,26 @@ export default function PaymentSuccess() {
     fetchBook();
   }, [success, orderId]);
 
-  // فتح الكتاب في نافذة جديدة مباشرة
-  const handleOpenBook = () => {
-    if (!bookData || !bookData.accessKey) return;
-    const url = `https://paymob-test-ten.vercel.app/books/${bookData.id}/pdf?accessKey=${bookData.accessKey}`;
-    window.open(url, "_blank");
-  };
+  
+ // فتح الكتاب في نافذة جديدة مباشرة
+const handleOpenBook = () => {
+  if (!bookData || !bookData.accessKey) return;
+  const url = `https://paymob-test-ten.vercel.app/books/${bookData.id}/pdf?accessKey=${bookData.accessKey}&mode=open`;
+  window.open(url, "_blank");
+};
 
-  // تحميل الكتاب مباشرة
-  const handleDownload = () => {
-    if (!bookData || !bookData.accessKey) return;
-    const url = `https://paymob-test-ten.vercel.app/books/${bookData.id}/pdf?accessKey=${bookData.accessKey}`;
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = bookData.pdf || `${bookData.title}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+// تحميل الكتاب مباشرة
+const handleDownload = () => {
+  if (!bookData || !bookData.accessKey) return;
+  const url = `https://paymob-test-ten.vercel.app/books/${bookData.id}/pdf?accessKey=${bookData.accessKey}&mode=download`;
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = bookData.pdf || `${bookData.title}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};
+
 
   if (loading) {
     return (
